@@ -1,5 +1,8 @@
+from ase.atoms import Atoms
+
+
 class BasisSetProvider:
-    def __init__(self, molecular_structure, reference_datapoint, tolerance):
+    def __init__(self, molecular_structure: Atoms, reference_datapoint: float, tolerance: float):
         self.molecular_structure = molecular_structure
         self.reference_datapoint = reference_datapoint
         self.tolerance = tolerance
@@ -16,6 +19,6 @@ class BasisSetProvider:
             return "STO-3G"
 
 
-def get_basis_set(molecular_structure, reference_datapoint, tolerance):
+def get_basis_set(molecular_structure: Atoms, reference_datapoint: float, tolerance: float) -> str:
     provider = BasisSetProvider(molecular_structure, reference_datapoint, tolerance)
     return provider.select_basis_set()
