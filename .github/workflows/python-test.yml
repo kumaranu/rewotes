@@ -22,7 +22,11 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
 
+    - name: Install NWChem
+      run: |
+        sudo apt-get update
+        sudo apt-get install nwchem -y  # Install NWChem
+
     - name: Run tests
       run: |
         pytest kumaranu/tests
-
