@@ -5,15 +5,26 @@ from pathlib import Path
 from ase.calculators.nwchem import NWChem
 import os
 import shutil
+from ase.optimize import QuasiNewton
+from ase.vibrations import Vibrations
+from ase.thermochemistry import IdealGasThermo
 
 project_root = Path(__file__).resolve().parents[2]
 
 
 @pytest.fixture()
-def setup_test_environment(tmp_path, request):
-    # input_geom = read(project_root / "kumaranu" / "tests" / '16.xyz')
-    input_geom = read(project_root / "kumaranu" / "tests" / 'molecule_xyz_files' / '04_C1H2O1_geometry_1.xyz')
+def setup_test_environment1(request):
+    input_geom1 = read(project_root / "kumaranu" / "tests" / 'molecule_xyz_files' / '04_C1H2O1_geometry_first.xyz')
+    return cleanup_test_environment(request, input_geom1)
 
+
+@pytest.fixture()
+def setup_test_environment2(request):
+    input_geom2 = read(project_root / "kumaranu" / "tests" / 'molecule_xyz_files' / '04_C1H2O1_geometry_last.xyz')
+    return cleanup_test_environment(request, input_geom2)
+
+
+def cleanup_test_environment(request, input_geom):
     def cleanup():
         files_and_dirs = [
             project_root / "nwchem.nwi",
@@ -31,30 +42,102 @@ def setup_test_environment(tmp_path, request):
                 print(f"{item} does not exist.")
 
     request.addfinalizer(cleanup)
-
     return input_geom
 
 
-def test_nwchem_ase_calc(setup_test_environment):
-    input_ase_obj = setup_test_environment
-    # Ignoring my error in the scratch directory assignment for now and cleaning it up afterwards
-    input_ase_obj.calc = NWChem(dft=dict(maxiter=2000, xc='B3LYP'), basis='STO-3G')
-    err_percent = (input_ase_obj.get_potential_energy()/27.2114 - (-114.38086655385808))/(-114.38086655385808)*100
+def calculate_energy_diff(input_ase_obj1, input_ase_obj2, basis):
+    # This function calculates Gibbs free energy but does not use it anywhere.
+    input_ase_obj1.calc = NWChem(
+        dft=dict(
+            maxiter=2000,
+            xc='B3LYP',
+            convergence={
+                'energy': 1e-9,
+                'density': 1e-7,
+                'gradient': 5e-6,
+                'hl_tol': 0.01,
+            }
+        ),
+        basis=basis,
+    )
+    dyn = QuasiNewton(input_ase_obj1)
+    dyn.run(fmax=0.01)
+    energy1 = input_ase_obj1.get_potential_energy()
+    vib = Vibrations(input_ase_obj1)
+    vib.run()
+    vib_energies = vib.get_energies()
+    thermo = IdealGasThermo(
+        vib_energies=vib_energies,
+        geometry='nonlinear',
+        potentialenergy=energy1,
+        atoms=input_ase_obj1,
+        symmetrynumber=1,
+        spin=0,
+    )
+    G = thermo.get_gibbs_energy(temperature=298.15, pressure=101325.)
+    print(G)
+    input_ase_obj2.calc = NWChem(
+        dft=dict(
+            maxiter=2000,
+            xc='B3LYP',
+            convergence={
+                'energy': 1e-9,
+                'density': 1e-7,
+                'gradient': 5e-6,
+                'hl_tol': 0.01,
+            }
+        ),
+        basis=basis,
+    )
+    dyn = QuasiNewton(input_ase_obj1)
+    dyn.run(fmax=0.01)
+    energy2 = input_ase_obj1.get_potential_energy()
+    vib = Vibrations(input_ase_obj1)
+    vib.run()
+    vib_energies = vib.get_energies()
+    thermo = IdealGasThermo(
+        vib_energies=vib_energies,
+        geometry='nonlinear',
+        potentialenergy=energy2,
+        atoms=input_ase_obj1,
+        symmetrynumber=1,
+        spin=0,
+    )
+    G = thermo.get_gibbs_energy(temperature=298.15, pressure=101325.)
+    print(G)
+    energy1 = input_ase_obj1.get_potential_energy()
+    energy2 = input_ase_obj2.get_potential_energy()
+    return energy1 - energy2
+
+
+def test_nwchem_ase_calc(setup_test_environment1, setup_test_environment2):
+    input_ase_obj1 = setup_test_environment1
+    input_ase_obj2 = setup_test_environment2
+    ref_energy_diff = abs(-114.38086655385808 - (-114.39630294354892))
+    basis_sets = [
+        "STO-3G",
+        "3-21G",
+        "6-31G",
+        "6-31G*",
+        "6-31G**",
+        "6-311G",
+        "6-311G*",
+        "6-311G**",
+        "6-311++G**",
+        "6-311++G(2d,2p)"
+    ]
     print('')
-    print(err_percent)
-    input_ase_obj.calc = NWChem(dft=dict(maxiter=2000, xc='B3LYP'), basis='3-21G')
-    err_percent = (input_ase_obj.get_potential_energy()/27.2114 - (-114.38086655385808))/(-114.38086655385808)*100
-    print(err_percent)
-    input_ase_obj.calc = NWChem(dft=dict(maxiter=2000, xc='B3LYP'), basis='6-31G')
-    err_percent = (input_ase_obj.get_potential_energy()/27.2114 - (-114.38086655385808))/(-114.38086655385808)*100
-    print(err_percent)
-    input_ase_obj.calc = NWChem(dft=dict(maxiter=2000, xc='B3LYP'), basis='6-31G*')
-    err_percent = (input_ase_obj.get_potential_energy()/27.2114 - (-114.38086655385808))/(-114.38086655385808)*100
-    print(err_percent)
-    # assert input_ase_obj.get_potential_energy() == pytest.approx(-7394.730594653764, abs=1e-5)
-    #assert input_ase_obj.get_potential_energy() == pytest.approx(-3115.4232282956423, abs=1e-5)
-    err_percent = (input_ase_obj.get_potential_energy()/27.2114 - (-114.38086655385808))/(-114.38086655385808)*100
-    assert err_percent == pytest.approx(0.01, abs=1e-2)
+    for basis in basis_sets:
+        energy_diff = calculate_energy_diff(input_ase_obj1, input_ase_obj2, basis)
+        err_percent = (abs(energy_diff/27.2114 - ref_energy_diff) / ref_energy_diff) * 100
+        print(f"Error percent for basis {basis}: {err_percent}")
+
+
+def test_nwchem_ase_calc_raw(setup_test_environment):
+    input_ase_obj = setup_test_environment
+    input_ase_obj.calc = NWChem(dft=dict(maxiter=2000, xc='B3LYP'), basis='6-31+G*')
+    calculated_energy = input_ase_obj.get_potential_energy()
+    assert calculated_energy == pytest.approx(-7394.730594653764, abs=1e-5)
 
 
 def test_get_basis_set_high_precision(setup_test_environment):
