@@ -133,26 +133,26 @@ def test_nwchem_ase_calc(setup_test_environment1, setup_test_environment2):
         print(f"Error percent for basis {basis}: {err_percent}")
 
 
-def test_nwchem_ase_calc_raw(setup_test_environment):
-    input_ase_obj = setup_test_environment
+def test_nwchem_ase_calc_raw(setup_test_environment1):
+    input_ase_obj = setup_test_environment1
     input_ase_obj.calc = NWChem(dft=dict(maxiter=2000, xc='B3LYP'), basis='6-31+G*')
     calculated_energy = input_ase_obj.get_potential_energy()
-    assert calculated_energy == pytest.approx(-7394.730594653764, abs=1e-5)
+    assert calculated_energy == pytest.approx(-3115.4232282956423, abs=1e-5)
 
 
-def test_get_basis_set_high_precision(setup_test_environment):
-    input_ase_obj = setup_test_environment
+def test_get_basis_set_high_precision(setup_test_environment1):
+    input_ase_obj = setup_test_environment1
     basis_set = get_basis_set(input_ase_obj, 0.0, 0.005)
     assert basis_set == "cc-pVTZ"
 
 
-def test_get_basis_set_medium_precision(setup_test_environment):
-    input_ase_obj = setup_test_environment
+def test_get_basis_set_medium_precision(setup_test_environment1):
+    input_ase_obj = setup_test_environment1
     basis_set = get_basis_set(input_ase_obj, 0.0, 0.03)
     assert basis_set == "cc-pVDZ"
 
 
-def test_get_basis_set_low_precision(setup_test_environment):
-    input_ase_obj = setup_test_environment
+def test_get_basis_set_low_precision(setup_test_environment1):
+    input_ase_obj = setup_test_environment1
     basis_set = get_basis_set(input_ase_obj, 0.0, 0.1)
     assert basis_set == "STO-3G"
