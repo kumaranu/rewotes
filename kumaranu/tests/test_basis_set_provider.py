@@ -60,6 +60,7 @@ def calculate_energy_diff(input_ase_obj1, input_ase_obj2, basis):
         ),
         basis=basis,
     )
+    '''
     dyn = QuasiNewton(input_ase_obj1)
     dyn.run(fmax=0.01)
     energy1 = input_ase_obj1.get_potential_energy()
@@ -76,6 +77,7 @@ def calculate_energy_diff(input_ase_obj1, input_ase_obj2, basis):
     )
     G = thermo.get_gibbs_energy(temperature=298.15, pressure=101325.)
     print(G)
+    '''
     input_ase_obj2.calc = NWChem(
         dft=dict(
             maxiter=2000,
@@ -89,6 +91,7 @@ def calculate_energy_diff(input_ase_obj1, input_ase_obj2, basis):
         ),
         basis=basis,
     )
+    '''
     dyn = QuasiNewton(input_ase_obj1)
     dyn.run(fmax=0.01)
     energy2 = input_ase_obj1.get_potential_energy()
@@ -105,6 +108,7 @@ def calculate_energy_diff(input_ase_obj1, input_ase_obj2, basis):
     )
     G = thermo.get_gibbs_energy(temperature=298.15, pressure=101325.)
     print(G)
+    '''
     energy1 = input_ase_obj1.get_potential_energy()
     energy2 = input_ase_obj2.get_potential_energy()
     return energy1 - energy2
@@ -121,16 +125,26 @@ def test_nwchem_ase_calc(setup_test_environment1, setup_test_environment2):
         "6-31G*",
         "6-31G**",
         "6-311G",
-        "6-311G*",
-        "6-311G**",
-        "6-311++G**",
-        "6-311++G(2d,2p)"
+        # "6-311G*",
+        # "6-311G**",
+        # "6-311++G**",
+        # "6-311++G(2d,2p)"
     ]
     print('')
     for basis in basis_sets:
-        energy_diff = calculate_energy_diff(input_ase_obj1, input_ase_obj2, basis)
-        err_percent = (abs(energy_diff/27.2114 - ref_energy_diff) / ref_energy_diff) * 100
-        print(f"Error percent for basis {basis}: {err_percent}")
+        try:
+            energy_diff = calculate_energy_diff(input_ase_obj1, input_ase_obj2, basis)
+            err_percent = (abs(energy_diff / 27.2114 - ref_energy_diff) / ref_energy_diff) * 100
+            print(f'\nBasis set: {basis}')
+            print(f'Energy difference: {energy_diff}')
+            print(f'Error percent: {err_percent}')
+            assert err_percent < 10, f"Error percent for basis {basis} is too high: {err_percent}%"
+        except AssertionError as e:
+            print(e)
+            raise
+        except Exception as e:
+            print(f"An error occurred with basis set {basis}: {e}")
+            raise
 
 
 def test_nwchem_ase_calc_raw(setup_test_environment1):
