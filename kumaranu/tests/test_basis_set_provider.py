@@ -1,5 +1,7 @@
 import glob
 import os
+
+import numpy as np
 import pytest
 import shutil
 import pandas as pd
@@ -9,7 +11,6 @@ from ase.optimize import QuasiNewton
 from ase.vibrations import Vibrations
 from ase.calculators.nwchem import NWChem
 from ase.thermochemistry import IdealGasThermo
-from kumaranu.basis_set_provider import get_basis_set
 
 project_root = Path(__file__).resolve().parents[2]
 
@@ -47,7 +48,7 @@ def cleanup_test_environment(request, input_geom):
     return input_geom
 
 
-def calculate_energy(input_ase_obj1, basis):
+def calculate_energy(input_ase_obj1, basis, vib_analysis=False):
     # This function calculates Gibbs free energy but does not use it anywhere.
     input_ase_obj1.calc = NWChem(
         dft=dict(
@@ -62,28 +63,86 @@ def calculate_energy(input_ase_obj1, basis):
         ),
         basis=basis,
     )
-    '''
-    dyn = QuasiNewton(input_ase_obj1)
-    dyn.run(fmax=0.01)
-    energy1 = input_ase_obj1.get_potential_energy()
-    vib = Vibrations(input_ase_obj1)
-    vib.run()
-    vib_energies = vib.get_energies()
-    thermo = IdealGasThermo(
-        vib_energies=vib_energies,
-        geometry='nonlinear',
-        potentialenergy=energy1,
-        atoms=input_ase_obj1,
-        symmetrynumber=1,
-        spin=0,
-    )
-    G = thermo.get_gibbs_energy(temperature=298.15, pressure=101325.)
-    print(G)
-    '''
+    if vib_analysis:
+        dyn = QuasiNewton(input_ase_obj1)
+        dyn.run(fmax=0.01)
+        energy1 = input_ase_obj1.get_potential_energy()
+        vib = Vibrations(input_ase_obj1)
+        vib.run()
+        vib_energies = vib.get_energies()
+        thermo = IdealGasThermo(
+            vib_energies=vib_energies,
+            geometry='nonlinear',
+            potentialenergy=energy1,
+            atoms=input_ase_obj1,
+            symmetrynumber=1,
+            spin=0,
+        )
+        G = thermo.get_gibbs_energy(temperature=298.15, pressure=101325.)
+        return G
 
     energy1 = input_ase_obj1.get_potential_energy()
 
     return energy1
+
+
+# Load the error data from the CSV file
+def load_error_data(csv_file):
+    df = pd.read_csv(csv_file)
+    error_data = {}
+
+    for _, row in df.iterrows():
+        chemical_name = row['chemical_name']
+        errors = row[3:].values.astype(float)  # Get error values and convert to float
+        error_data[chemical_name] = errors
+
+    return error_data, df.columns[3:].tolist()  # return error data and basis sets
+
+
+def select_basis_set(new_geometry, known_geometry, tolerance):
+    # Load the error data
+    error_data, basis_sets = load_error_data(
+        f'{str(project_root)}/kumaranu/tests/molecule_xyz_files/basis_set_error_data.csv',
+    )
+    new_formula = str(new_geometry.symbols)
+    known_formula = str(known_geometry.symbols)
+    if known_formula != new_formula:
+        raise ValueError(f"The chemical formula for the new geometry and the reference do not match.")
+
+    errors = np.abs(np.array(error_data[known_formula]))
+    below_tolerance = errors <= tolerance
+
+    if any(below_tolerance):
+        selected_index = np.argmax(below_tolerance)
+        selected_basis = basis_sets[selected_index][:-14]
+        return selected_basis
+    else:
+        best_index = np.argmin(errors)
+        best_basis = basis_sets[best_index][:-14]
+        print(f"Warning: No basis set can satisfy the tolerance of {tolerance}. "
+              f"Using the best available basis set, {best_basis}.")
+        return best_basis
+
+
+def test_select_basis_set_low_tol():
+    new_geometry = read(project_root / 'kumaranu/tests/molecule_xyz_files/03_C1O2_geometry_last.xyz')
+    reference_geometry = read(project_root / 'kumaranu/tests/molecule_xyz_files/03_C1O2_geometry_first.xyz')
+    tolerance = 4.0
+    assert select_basis_set(new_geometry, reference_geometry, tolerance) == 'STO-3G'
+
+
+def test_select_basis_set_medium_tol():
+    new_geometry = read(project_root / 'kumaranu/tests/molecule_xyz_files/03_C1O2_geometry_last.xyz')
+    reference_geometry = read(project_root / 'kumaranu/tests/molecule_xyz_files/03_C1O2_geometry_first.xyz')
+    tolerance = 0.1
+    assert select_basis_set(new_geometry, reference_geometry, tolerance) == '6-31G'
+
+
+def test_select_basis_set_high_tol():
+    new_geometry = read(project_root / 'kumaranu/tests/molecule_xyz_files/03_C1O2_geometry_last.xyz')
+    reference_geometry = read(project_root / 'kumaranu/tests/molecule_xyz_files/03_C1O2_geometry_first.xyz')
+    tolerance = 0.01
+    assert select_basis_set(new_geometry, reference_geometry, tolerance) == '6-31G'
 
 
 def test_collect_and_store_data(
@@ -96,10 +155,15 @@ def test_collect_and_store_data(
 
     data = []
     mol_list = glob.glob(f'{str(project_root)}/kumaranu/tests/molecule_xyz_files/*_first.xyz')
+
     for mol in mol_list:
         input_ase_obj1 = read(mol)
         ref_energy = float(list(input_ase_obj1.info)[1])
-        row_data = {'geometry': input_ase_obj1.positions.tolist()}
+        row_data = {
+             'chemical_name': input_ase_obj1.symbols,
+             'chemical_symbols': input_ase_obj1.get_chemical_symbols(),
+             'geometry': input_ase_obj1.positions.tolist(),
+             }
 
         for basis in basis_sets:
             try:
@@ -117,41 +181,8 @@ def test_collect_and_store_data(
     print(f'Data has been saved to {output_file}')
 
 
-def categorize_error(err_percent):
-    if err_percent < 5:
-        return '0-5'
-    elif err_percent < 10:
-        return '5-10'
-    elif err_percent < 15:
-        return '10-15'
-    elif err_percent < 20:
-        return '15-20'
-    elif err_percent < 25:
-        return '20-25'
-    else:
-        return '25+'
-
-
 def test_nwchem_ase_calc_raw(setup_test_environment1):
     input_ase_obj = setup_test_environment1
     input_ase_obj.calc = NWChem(dft=dict(maxiter=2000, xc='B3LYP'), basis='6-31+G*')
     calculated_energy = input_ase_obj.get_potential_energy()
     assert calculated_energy == pytest.approx(-3115.4232282956423, abs=1e-5)
-
-
-def test_get_basis_set_high_precision(setup_test_environment1):
-    input_ase_obj = setup_test_environment1
-    basis_set = get_basis_set(input_ase_obj, 0.0, 0.005)
-    assert basis_set == "cc-pVTZ"
-
-
-def test_get_basis_set_medium_precision(setup_test_environment1):
-    input_ase_obj = setup_test_environment1
-    basis_set = get_basis_set(input_ase_obj, 0.0, 0.03)
-    assert basis_set == "cc-pVDZ"
-
-
-def test_get_basis_set_low_precision(setup_test_environment1):
-    input_ase_obj = setup_test_environment1
-    basis_set = get_basis_set(input_ase_obj, 0.0, 0.1)
-    assert basis_set == "STO-3G"
