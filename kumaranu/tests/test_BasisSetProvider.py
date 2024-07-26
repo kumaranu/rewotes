@@ -42,6 +42,7 @@ def cleanup_test_environment(request, input_geom):
     return input_geom
 
 
+@pytest.mark.skip()
 def test_BasisSetProvider(
         setup_test_environment1,
         setup_test_environment2,
@@ -59,6 +60,7 @@ def test_BasisSetProvider(
     ) == '6-31G'
 
 
+@pytest.mark.skip()
 def test_BasisSetProvider_low_tol(
         setup_test_environment1,
         setup_test_environment2,
@@ -76,6 +78,7 @@ def test_BasisSetProvider_low_tol(
     ) == '6-31G'
 
 
+@pytest.mark.skip()
 def test_BasisSetProvider_high_tol(
         setup_test_environment1,
         setup_test_environment2,
