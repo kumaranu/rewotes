@@ -3,6 +3,27 @@ from ase.atoms import Atoms
 
 
 class BasisSetSelector:
+    """
+    Selects the best basis set for a given molecular structure within a specified tolerance.
+
+    Parameters
+    ----------
+    molecular_structure : Atoms
+        The molecular structure for which the basis set needs to be selected.
+    reference_datapoint : Atoms
+        The reference molecular structure used to compare and find the best basis set.
+    tolerance : float
+        The acceptable error tolerance for selecting the basis set.
+    error_data : dict
+        A dictionary containing error percentages for various basis sets.
+    basis_sets : list
+        A list of basis sets to consider.
+
+    Methods
+    -------
+    select_basis_set()
+        Selects the best basis set that satisfies the error tolerance.
+    """
     def __init__(
             self,
             molecular_structure: Atoms,
@@ -18,6 +39,22 @@ class BasisSetSelector:
         self.basis_sets = basis_sets
 
     def select_basis_set(self):
+        """
+        Selects the best basis set that satisfies the error tolerance.
+
+        This method compares the error percentages of the available basis sets with the specified tolerance.
+        If a basis set meets the tolerance, it is selected. Otherwise, the basis set with the minimum error is selected.
+
+        Returns
+        -------
+        str
+            The name of the selected basis set.
+
+        Raises
+        ------
+        ValueError
+            If the chemical formula of the new geometry does not match the reference.
+        """
         new_formula = str(self.molecular_structure.symbols)
         known_formula = str(self.reference_datapoint.symbols)
 
