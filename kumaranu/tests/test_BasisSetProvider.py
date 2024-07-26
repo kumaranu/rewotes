@@ -22,9 +22,8 @@ def mock_load_error_data(*args, **kwargs):
 
 @pytest.fixture
 def setup_basis_set_provider():
-    project_root = "/mock/path"
     tolerance = 0.5
-    return BasisSetProvider(project_root, tolerance)
+    return BasisSetProvider(tolerance)
 
 
 @pytest.fixture
@@ -42,7 +41,6 @@ def test_get_basis_set_within_tolerance(
 
     tolerance = 0.5
     basisProviderObject = BasisSetProvider(
-        project_root,
         tolerance,
         # error_data_file=str(project_root / 'kumaranu/tests/molecule_xyz_files/basis_set_error_data.csv'),
         files_dir=str(project_root / 'kumaranu/tests/three_molecules'),
@@ -62,7 +60,6 @@ def test_get_basis_set_mismatched_formulas(
 
     tolerance = 0.5
     provider = BasisSetProvider(
-        project_root,
         tolerance,
         error_data_file=str(project_root / 'kumaranu/tests/molecule_xyz_files/basis_set_error_data.csv'),
     )
