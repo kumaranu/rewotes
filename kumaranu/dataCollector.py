@@ -4,6 +4,7 @@ import pandas as pd
 from ase.io import read
 from kumaranu.calculators import EnergyCalculator
 from typing import List
+from pathlib import Path
 
 
 class DataCollector:
@@ -12,8 +13,6 @@ class DataCollector:
 
     Parameters
     ----------
-    project_root : str
-        The root directory of the project.
     files_dir : str, optional
         The directory containing molecular XYZ files.
         If not provided, a default directory within the project root will be used.
@@ -30,12 +29,10 @@ class DataCollector:
     """
     def __init__(
             self,
-            project_root: str,
             files_dir: str = None,
             basis_sets: List[str] = None,
     ):
-        self.project_root = project_root
-        self.files_dir = files_dir if files_dir else f'{self.project_root}/kumaranu/tests/molecule_xyz_files'
+        self.files_dir = files_dir if files_dir else f'{Path(__file__).resolve().parents[2]}/kumaranu/tests/molecule_xyz_files'
         self.basis_sets = basis_sets if basis_sets else [
             "STO-3G", "3-21G", "6-31G", "6-31G*", "6-31G**",
             "6-311G", "6-311G*", "6-311G**", "6-311++G**", "6-311++G(2d,2p)",
