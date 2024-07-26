@@ -42,7 +42,6 @@ def test_get_basis_set_within_tolerance(
     tolerance = 0.5
     basisProviderObject = BasisSetProvider(
         tolerance,
-        # error_data_file=str(project_root / 'kumaranu/tests/molecule_xyz_files/basis_set_error_data.csv'),
         files_dir=str(project_root / 'kumaranu/tests/three_molecules'),
         recalculate_errors=True,
     )
