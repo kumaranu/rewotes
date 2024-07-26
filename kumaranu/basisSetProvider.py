@@ -5,6 +5,33 @@ from kumaranu.basisSetSelector import BasisSetSelector
 
 
 class BasisSetProvider:
+    """
+    Provides the best basis set for a given molecular structure within a specified tolerance.
+
+    Parameters
+    ----------
+    project_root : str
+        The root directory of the project.
+    tolerance : float
+        The tolerance for selecting the basis set.
+    error_data_file : str, optional
+        The path to the CSV file containing error data for basis sets.
+        If not provided, a default path within the project root will be used.
+    files_dir : str, optional
+        The directory containing molecular XYZ files.
+        If not provided, a default directory within the project root will be used.
+    basis_sets : List[str], optional
+        A list of basis sets to be considered.
+        If not provided, a default list of common basis sets will be used.
+    recalculate_errors : bool, optional
+        Whether to recalculate errors and update the error data file.
+        Default is False.
+
+    Methods
+    -------
+    get_basis_set(molecular_structure, reference_datapoint)
+        Returns the best basis set for the given molecular structure within the specified tolerance.
+    """
     def __init__(
             self,
             project_root: str,
@@ -30,6 +57,21 @@ class BasisSetProvider:
             molecular_structure: Atoms,
             reference_datapoint: Atoms,
     ) -> str:
+        """
+        Returns the best basis set for the given molecular structure within the specified tolerance.
+
+        Parameters
+        ----------
+        molecular_structure : Atoms
+            The molecular structure for which to select the basis set.
+        reference_datapoint : Atoms
+            The reference molecular structure to compare against.
+
+        Returns
+        -------
+        str
+            The selected basis set within the specified tolerance.
+        """
         if self.recalculate_errors:
             data_collector = DataCollector(
                 self.project_root,
