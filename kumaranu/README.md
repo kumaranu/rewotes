@@ -37,3 +37,58 @@ as parameters and get the basis set that satisfies the tolerance criterion.
 
 - create an account at exabyte.io and use it for the calculation purposes
 - suggested modeling engine: NWCHEM or SIESTA
+
+## Getting Started
+
+### Clone the Repository:
+
+```
+sh
+
+git clone https://github.com/kumaranu/rewotes.git
+
+cd rewotes
+```
+Create and Activate Conda Environment:
+```
+sh
+
+conda create -n test0 python=3.10
+conda activate test0
+```
+Install the Package:
+```
+sh
+pip install -e .
+```
+Run the Example Code:
+```
+python
+
+import importlib
+from pathlib import Path
+from ase.atoms import Atoms
+from kumaranu.basisSetProvider import BasisSetProvider
+
+# Define project_root
+kumaranu_spec = importlib.util.find_spec('kumaranu')
+project_root = Path(kumaranu_spec.origin).parent.parent
+
+# Define the molecules
+mol = Atoms('CO2', positions=[[0, 0, 0], [1, 1.01, 1], [-1, -1.03, -1]])
+ref = Atoms('CO2', positions=[[0, 0, 0], [1.01, 1, 1], [-1, -1.01, -1]])
+
+# Set the tolerance
+tolerance = 0.5
+
+# Create the BasisSetProvider object
+basisProviderObject = BasisSetProvider(
+    tolerance,
+    files_dir=str(project_root / 'kumaranu/tests/three_molecules'),
+    recalculate_errors=True,
+)
+
+# Get the selected basis set
+selected_basis = basisProviderObject.get_basis_set(mol, ref)
+print(selected_basis)
+```
