@@ -1,0 +1,2 @@
+chemical_name,chemical_symbols,geometry,STO-3G-error-percent,3-21G-error-percent,6-31G-error-percent
+N2,"['N', 'N']","[[0.0, 0.0, 0.559], [0.0, 0.0, -0.559]]",0.5,0.4,0.3
