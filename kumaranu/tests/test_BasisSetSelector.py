@@ -2,6 +2,7 @@ import pytest
 from ase.atoms import Atoms
 import pandas as pd
 from pathlib import Path
+from typing import Dict, List, Tuple
 from kumaranu.basisSetSelector import BasisSetSelector
 
 
@@ -19,33 +20,28 @@ def reference_datapoint():
 
 
 @pytest.fixture
-def basis_sets():
-    return [
-        "STO-3G", "3-21G", "6-31G", "6-31G*", "6-31G**",
-        "6-311G", "6-311G*", "6-311G**", "6-311++G**", "6-311++G(2d,2p)"
+def error_data_and_basis_sets() -> Tuple[Dict[str, List[float]], List[str]]:
+    # Hardcoded data
+    data = {
+        "N2": [-1.2652515155542783, -0.4917908825196436, -0.03702286490532115, -0.08503021510053684,
+               -0.08503021510053684, -0.06573130275116197, -0.11438153591093994, -0.11438153591093994,
+               -0.11763637034154815, -0.12099438384939021],
+        "CO": [-1.266834206595056, -0.475787564741829, -0.043394708420021647, -0.08409217074733753,
+               -0.08409217074733753, -0.07535373422110433, -0.11529549705529316, -0.11529549705529316,
+               -0.1179940151666584, -0.12031354017204007],
+        "CO2": [-1.2997750766051088, -0.48029585658507695, -0.03818469310548968, -0.07979115363540501,
+                -0.07979115363540501, -0.06835718570434102, -0.11187734731329128, -0.11187734731329128,
+                -0.11498456847993427, -0.11686304503801831]
+    }
+    # this error-percent thing needs to be changed.
+    basis_sets = [
+        'STO-3G-error-percent', '3-21G-error-percent', '6-31G-error-percent',
+        '6-31G*-error-percent', '6-31G**-error-percent', '6-311G-error-percent',
+        '6-311G*-error-percent', '6-311G**-error-percent', '6-311++G**-error-percent',
+        '6-311++G(2d,2p)-error-percent',
     ]
 
-
-@pytest.fixture
-def error_data_and_basis_sets():
-    # Define the path to the CSV file
-    project_root = Path("/home/kumaranu/Documents/rewotes/kumaranu/tests")
-    error_data_file = project_root / 'three_molecules' / 'basis_set_error_data.csv'
-
-    # Read the CSV file into a DataFrame
-    df = pd.read_csv(error_data_file)
-
-    # Process the DataFrame to create the error_data dictionary
-    error_data = {}
-    for _, row in df.iterrows():
-        chemical_name = row['chemical_name']
-        errors = row[3:].values.astype(float)
-        error_data[chemical_name] = errors
-
-    # Extract the basis sets from the column headers
-    basis_sets = df.columns[3:].tolist()
-
-    return error_data, basis_sets
+    return data, basis_sets
 
 
 def test_select_basis_set_within_tolerance(
@@ -54,7 +50,6 @@ def test_select_basis_set_within_tolerance(
         error_data_and_basis_sets
 ):
     error_data, basis_sets = error_data_and_basis_sets
-
     selector = BasisSetSelector(
         molecular_structure,
         reference_datapoint,
