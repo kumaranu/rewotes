@@ -15,7 +15,12 @@ class EnergyCalculator:
         Calculates the potential energy or Gibbs free energy of a given molecular structure.
     """
     @staticmethod
-    def calculate_energy(ase_obj: Atoms, basis: str, vib_analysis=False, **kwargs):
+    def calculate_energy(
+            ase_obj: Atoms,
+            basis: str,
+            vib_analysis=False,
+            **kwargs,
+    ):
         """
         Calculates the potential energy or Gibbs free energy of a given molecular structure.
 
