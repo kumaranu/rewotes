@@ -7,6 +7,27 @@ from typing import List
 
 
 class DataCollector:
+    """
+    Collects and stores energy error data for various basis sets and molecular structures.
+
+    Parameters
+    ----------
+    project_root : str
+        The root directory of the project.
+    files_dir : str, optional
+        The directory containing molecular XYZ files.
+        If not provided, a default directory within the project root will be used.
+    basis_sets : List[str], optional
+        A list of basis sets to be considered.
+        If not provided, a default list of common basis sets will be used.
+
+    Methods
+    -------
+    collect_and_store_data()
+        Collects energy error data for each molecular structure and basis set, and stores it in a CSV file.
+    load_error_data(csv_file)
+        Loads energy error data from a CSV file and returns it as a dictionary along with the basis sets.
+    """
     def __init__(
             self,
             project_root: str,
@@ -21,6 +42,12 @@ class DataCollector:
         ]
 
     def collect_and_store_data(self):
+        """
+        Collects energy error data for each molecular structure and basis set, and stores it in a CSV file.
+
+        This method reads molecular structures from XYZ files, calculates the energy for each basis set,
+        computes the error percentage, and saves the data to a CSV file in the specified directory.
+        """
         data = []
         mol_list = glob.glob(f'{self.files_dir}/*_first.xyz')
 
@@ -52,6 +79,21 @@ class DataCollector:
 
     @staticmethod
     def load_error_data(csv_file):
+        """
+        Loads energy error data from a CSV file.
+
+        Parameters
+        ----------
+        csv_file : str
+            The path to the CSV file containing the error data.
+
+        Returns
+        -------
+        tuple
+            A tuple containing:
+                - error_data (dict): A dictionary with chemical names as keys and error percentages as values.
+                - basis_sets (list of str): A list of basis sets.
+        """
         df = pd.read_csv(csv_file)
         error_data = {}
 
