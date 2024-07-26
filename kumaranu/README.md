@@ -43,28 +43,21 @@ as parameters and get the basis set that satisfies the tolerance criterion.
 ### Clone the Repository:
 
 ```
-sh
-
 git clone https://github.com/kumaranu/rewotes.git
 
 cd rewotes
 ```
 Create and Activate Conda Environment:
 ```
-sh
-
 conda create -n test0 python=3.10
 conda activate test0
 ```
 Install the Package:
 ```
-sh
 pip install -e .
 ```
-Run the Example Code:
+Run the python script given below:
 ```
-python
-
 import importlib
 from pathlib import Path
 from ase.atoms import Atoms
