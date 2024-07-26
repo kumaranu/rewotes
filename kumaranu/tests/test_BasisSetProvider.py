@@ -1,96 +1,71 @@
-import os
 import pytest
-import shutil
-from ase.io import read
-from pathlib import Path
-
+from ase.atoms import Atoms
+from ase.build import molecule
 from kumaranu.basisSetProvider import BasisSetProvider
+from kumaranu.dataCollector import DataCollector
+from kumaranu.basisSetSelector import BasisSetSelector
+
+from pathlib import Path
 
 project_root = Path(__file__).resolve().parents[2]
 
 
+# Mock data and functions
 @pytest.fixture()
-def setup_test_environment1(request):
-    input_geom1 = read(project_root / "kumaranu" / "tests" / 'molecule_xyz_files' / '04_C1H2O1_geometry_first.xyz')
-    return cleanup_test_environment(request, input_geom1)
+def mock_load_error_data(*args, **kwargs):
+    # This mock function provides controlled test data
+    return {
+        'CO2': [1.0, 2.0, 3.0],  # Example error data for CO2
+        'H2': [0.1, 0.2, 0.3],  # Example error data for H2
+    }, ["STO-3G", "3-21G", "6-31G"]
 
 
-@pytest.fixture()
-def setup_test_environment2(request):
-    input_geom2 = read(project_root / "kumaranu" / "tests" / 'molecule_xyz_files' / '04_C1H2O1_geometry_last.xyz')
-    return cleanup_test_environment(request, input_geom2)
+@pytest.fixture
+def setup_basis_set_provider():
+    project_root = "/mock/path"
+    tolerance = 0.5
+    return BasisSetProvider(project_root, tolerance)
 
 
-def cleanup_test_environment(request, input_geom):
-    def cleanup():
-        files_and_dirs = [
-            project_root / "nwchem.nwi",
-            project_root / "nwchem.nwo",
-            project_root / "nwchem"
-        ]
-        for item in files_and_dirs:
-            if os.path.isfile(item):
-                print(f"Removing file: {item}")
-                os.remove(item)
-            elif os.path.isdir(item):
-                print(f"Removing directory: {item}")
-                shutil.rmtree(item)
-            else:
-                print(f"{item} does not exist.")
-
-    request.addfinalizer(cleanup)
-    return input_geom
+@pytest.fixture
+def mock_data_collector(monkeypatch):
+    # Replace DataCollector's load_error_data method with a mock
+    monkeypatch.setattr(DataCollector, 'load_error_data', mock_load_error_data)
 
 
-@pytest.mark.skip()
-def test_BasisSetProvider(
-        setup_test_environment1,
-        setup_test_environment2,
+def test_get_basis_set_within_tolerance(
+        setup_basis_set_provider,
+        mock_load_error_data,
 ):
-    reference = setup_test_environment1
-    new_structure = setup_test_environment2
+    mol = Atoms('CO2', positions=[[0, 0, 0], [1, 1, 1], [-1, -1, -1]])
+    ref = Atoms('CO2', positions=[[0, 0, 0], [1, 1, 1], [-1, -1, -1]])
 
-    basisSetProviderObject = BasisSetProvider(
+    tolerance = 0.5
+    basisProviderObject = BasisSetProvider(
         project_root,
-        tolerance=0.1,
+        tolerance,
+        # error_data_file=str(project_root / 'kumaranu/tests/molecule_xyz_files/basis_set_error_data.csv'),
+        files_dir=str(project_root / 'kumaranu/tests/three_molecules'),
+        recalculate_errors=True,
     )
-    assert basisSetProviderObject.get_basis_set(
-        new_structure,
-        reference
-    ) == '6-31G'
+    selected_basis = basisProviderObject.get_basis_set(mol, ref)
+
+    assert selected_basis == '3-21G'
 
 
-@pytest.mark.skip()
-def test_BasisSetProvider_low_tol(
-        setup_test_environment1,
-        setup_test_environment2,
+def test_get_basis_set_mismatched_formulas(
+        setup_basis_set_provider,
+        mock_load_error_data,
 ):
-    reference = setup_test_environment1
-    new_structure = setup_test_environment2
+    mol = Atoms('CO2', positions=[[0, 0, 0], [1, 1, 1], [-1, -1, -1]])
+    ref = Atoms('H2', positions=[[0, 0, 0], [0, 0, 0.74]])
 
-    basisSetProviderObject = BasisSetProvider(
+    tolerance = 0.5
+    provider = BasisSetProvider(
         project_root,
-        tolerance=0.01,
+        tolerance,
+        error_data_file=str(project_root / 'kumaranu/tests/molecule_xyz_files/basis_set_error_data.csv'),
     )
-    assert basisSetProviderObject.get_basis_set(
-        new_structure,
-        reference
-    ) == '6-31G'
-
-
-@pytest.mark.skip()
-def test_BasisSetProvider_high_tol(
-        setup_test_environment1,
-        setup_test_environment2,
-):
-    reference = setup_test_environment1
-    new_structure = setup_test_environment2
-
-    basisSetProviderObject = BasisSetProvider(
-        project_root,
-        tolerance=5,
-    )
-    assert basisSetProviderObject.get_basis_set(
-        new_structure,
-        reference
-    ) == 'STO-3G'
+    with pytest.raises(ValueError,
+                       match="The chemical formula for the new geometry \(CO2\) and the reference \(H2\) do not match."):
+        provider.get_basis_set(mol, ref)
