@@ -28,14 +28,14 @@ def setup_test_environment(tmp_path):
         "6-311G", "6-311G*", "6-311G**", "6-311++G**", "6-311++G(2d,2p)",
     ]
 
-    return str(test_dir), mol_file, str(files_dir), basis_sets
+    return mol_file, str(files_dir), basis_sets
 
 
 def test_collect_and_store_data(setup_test_environment):
-    test_dir, mol_file, files_dir, basis_sets = setup_test_environment
+    mol_file, files_dir, basis_sets = setup_test_environment
 
     # Create DataCollector instance
-    collector = DataCollector(test_dir, files_dir, basis_sets)
+    collector = DataCollector(files_dir, basis_sets)
 
     collector.collect_and_store_data()
 
@@ -62,10 +62,10 @@ def test_collect_and_store_data(setup_test_environment):
 
 
 def test_load_error_data(setup_test_environment):
-    test_dir, mol_file, files_dir, basis_sets = setup_test_environment
+    mol_file, files_dir, basis_sets = setup_test_environment
 
     # Create DataCollector instance
-    collector = DataCollector(test_dir, files_dir, basis_sets)
+    collector = DataCollector(files_dir, basis_sets)
 
     # Create a mock CSV file
     data = {
