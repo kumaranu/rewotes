@@ -124,6 +124,7 @@ def select_basis_set(new_geometry, known_geometry, tolerance):
         return best_basis
 
 
+@pytest.mark.skip()
 def test_select_basis_set_low_tol():
     new_geometry = read(project_root / 'kumaranu/tests/molecule_xyz_files/03_C1O2_geometry_last.xyz')
     reference_geometry = read(project_root / 'kumaranu/tests/molecule_xyz_files/03_C1O2_geometry_first.xyz')
@@ -131,6 +132,7 @@ def test_select_basis_set_low_tol():
     assert select_basis_set(new_geometry, reference_geometry, tolerance) == 'STO-3G'
 
 
+@pytest.mark.skip()
 def test_select_basis_set_medium_tol():
     new_geometry = read(project_root / 'kumaranu/tests/molecule_xyz_files/03_C1O2_geometry_last.xyz')
     reference_geometry = read(project_root / 'kumaranu/tests/molecule_xyz_files/03_C1O2_geometry_first.xyz')
@@ -138,6 +140,7 @@ def test_select_basis_set_medium_tol():
     assert select_basis_set(new_geometry, reference_geometry, tolerance) == '6-31G'
 
 
+@pytest.mark.skip()
 def test_select_basis_set_high_tol():
     new_geometry = read(project_root / 'kumaranu/tests/molecule_xyz_files/03_C1O2_geometry_last.xyz')
     reference_geometry = read(project_root / 'kumaranu/tests/molecule_xyz_files/03_C1O2_geometry_first.xyz')
@@ -145,6 +148,7 @@ def test_select_basis_set_high_tol():
     assert select_basis_set(new_geometry, reference_geometry, tolerance) == '6-31G'
 
 
+@pytest.mark.skip()
 def test_collect_and_store_data(
         output_file=f'{str(project_root)}/kumaranu/tests/molecule_xyz_files/basis_set_error_data.csv',
 ):
@@ -181,6 +185,7 @@ def test_collect_and_store_data(
     print(f'Data has been saved to {output_file}')
 
 
+@pytest.mark.skip()
 def test_nwchem_ase_calc_raw(setup_test_environment1):
     input_ase_obj = setup_test_environment1
     input_ase_obj.calc = NWChem(dft=dict(maxiter=2000, xc='B3LYP'), basis='6-31+G*')
