@@ -2,6 +2,7 @@ from typing import List
 from ase.atoms import Atoms
 from kumaranu.dataCollector import DataCollector
 from kumaranu.basisSetSelector import BasisSetSelector
+from pathlib import Path
 
 
 class BasisSetProvider:
@@ -10,8 +11,6 @@ class BasisSetProvider:
 
     Parameters
     ----------
-    project_root : str
-        The root directory of the project.
     tolerance : float
         The tolerance for selecting the basis set.
     error_data_file : str, optional
@@ -34,18 +33,16 @@ class BasisSetProvider:
     """
     def __init__(
             self,
-            project_root: str,
             tolerance: float,
             error_data_file: str = None,
             files_dir: str = None,
             basis_sets: List[str] = None,
             recalculate_errors: bool = False,
     ):
-        self.project_root = project_root
         self.tolerance = tolerance
+        self.files_dir = files_dir if files_dir else f'{Path(__file__).resolve().parents[2]}/kumaranu/tests/molecule_xyz_files'
         self.error_data_file = error_data_file if error_data_file \
-            else f'{self.project_root}/kumaranu/tests/molecule_xyz_files/basis_set_error_data.csv'
-        self.files_dir = files_dir if files_dir else f'{self.project_root}/kumaranu/tests/molecule_xyz_files'
+            else f'{files_dir}/basis_set_error_data.csv'
         self.basis_sets = basis_sets if basis_sets else [
             "STO-3G", "3-21G", "6-31G", "6-31G*", "6-31G**",
             "6-311G", "6-311G*", "6-311G**", "6-311++G**", "6-311++G(2d,2p)",
@@ -74,7 +71,6 @@ class BasisSetProvider:
         """
         if self.recalculate_errors:
             data_collector = DataCollector(
-                self.project_root,
                 self.files_dir,
                 self.basis_sets,
             )
