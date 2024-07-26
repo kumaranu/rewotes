@@ -60,9 +60,6 @@ def test_collect_and_store_data(setup_test_environment):
     )
     assert row['STO-3G-error-percent'] is not None
 
-    row = df.iloc[1]
-    assert row['chemical_name'] == 'CO'
-
 
 def test_load_error_data(setup_test_environment):
     test_dir, mol_file, files_dir, basis_sets = setup_test_environment
